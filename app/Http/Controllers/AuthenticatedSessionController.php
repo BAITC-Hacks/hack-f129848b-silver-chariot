@@ -34,6 +34,10 @@ class AuthenticatedSessionController extends Controller
         $role = $request->user()->can('switch-to-hr') ? 'hr' : 'employee';
         $request->session()->put('role', $role);
 
+        if ($role === 'employee') {
+            $request->session()->forget('url.intended');
+        }
+
         return $request->expectsJson()
             ? response()->json(['role' => $role])
             : redirect()->intended(route('employees.index'));

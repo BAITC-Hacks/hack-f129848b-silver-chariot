@@ -107,18 +107,50 @@ class AuthenticationTest extends TestCase
     public function test_login_uses_assigned_role_ignores_privilege_fields_and_rotates_session(): void
     {
         $user = User::factory()->create(['email' => 'employee@example.com']);
-        $this->withSession(['role' => 'hr', 'employee_id' => 'E0001']);
+        $this->withSession(['role' => 'hr', 'employee_id' => 'E0001', 'url.intended' => route('hr.events.index')]);
         $sessionId = session()->getId();
 
         $this->postJson('/login', [
             'email' => 'EMPLOYEE@example.com', 'password' => 'password',
             'role' => 'hr', 'employee_id' => 'E0001',
         ])->assertExactJson(['role' => 'employee'])->assertSessionHas('role', 'employee')
-            ->assertSessionMissing('employee_id');
+            ->assertSessionMissing('employee_id')->assertSessionMissing('url.intended');
 
         $this->assertAuthenticatedAs($user);
         $this->assertNotSame($sessionId, session()->getId());
         $this->assertDatabaseHas('users', ['id' => $user->id, 'role' => 'employee', 'employee_id' => null]);
+    }
+
+    #[TestWith(['/hr/events'])]
+    #[TestWith(['/hr'])]
+    #[TestWith(['/admin/upload'])]
+    public function test_employee_login_opens_own_profile_after_requesting_hr_page(string $path): void
+    {
+        $this->import();
+        $user = User::factory()->create(['employee_id' => 'E0001']);
+        $this->get($path)->assertRedirectToRoute('login')->assertSessionHas('url.intended', url($path));
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertRedirectToRoute('employees.index')->assertSessionHas('role', 'employee')
+            ->assertSessionMissing('url.intended');
+
+        $this->assertAuthenticatedAs($user);
+        $this->get('/employees')->assertRedirectToRoute('employees.show', 'E0001');
+        $this->get('/employees/E0001')->assertOk()->assertViewIs('employees.show');
+    }
+
+    public function test_hr_login_returns_to_requested_event_catalog_with_filters(): void
+    {
+        $this->import();
+        $user = User::factory()->create(['role' => 'hr']);
+        $this->get('/hr/events?search=System')->assertRedirectToRoute('login');
+
+        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertRedirectToRoute('hr.events.index', ['search' => 'System'])->assertSessionHas('role', 'hr')
+            ->assertSessionMissing('url.intended');
+
+        $this->assertAuthenticatedAs($user);
+        $this->get('/hr/events?search=System')->assertOk()->assertViewIs('events.index');
     }
 
     public function test_invalid_password_does_not_authenticate_or_flash_password(): void
