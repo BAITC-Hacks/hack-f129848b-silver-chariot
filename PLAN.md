@@ -4,7 +4,7 @@
 
 ## Участник A — Backend / Данные
 
-- [ ] Скаффолд Laravel в корень репо, SQLite, `setup.sh` (запуск одной командой)
+- [x] Скаффолд Laravel в корень репо, SQLite, `setup.sh` (запуск одной командой)
 - [ ] Миграции 6 таблиц: `skills`, `role_profiles`, `employees`, `events`, `activity_records`, `recommendations`
 - [ ] Модели Eloquent
 - [ ] `DatasetImporter` + `php artisan data:import` (все 4 файла стартового кита)
@@ -44,7 +44,7 @@ Blade + Tailwind (Vite). До интеграции — на моках по ко
 
 ## Маркеры интеграции
 
-- [ ] **M0** — `php artisan serve` поднимается, контракты зафиксированы
+- [x] **M0** — `php artisan serve` поднимается, контракты зафиксированы
 - [ ] **M1** — импорт данных работает; движок на фикстуре выдаёт осмысленный топ-3
 - [ ] **M2** — POST /recommendations возвращает 1–3 события с обоснованием ≥3 факторов (llm и fallback)
 - [ ] **M3** — полный сценарий сотрудника end-to-end на живых данных
