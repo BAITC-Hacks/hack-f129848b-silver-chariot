@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ActivityRecord;
 use App\Models\Employee;
 use App\Models\Event;
+use App\Models\Recommendation;
 use App\Models\RoleProfile;
 use App\Models\Skill;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,7 @@ class DatasetImporter
                 Validator::make($data, ['skills' => 'present|array', 'role_profiles' => 'present|array'])->validate();
                 $counts['skills'] = $this->rows(Skill::class, $data['skills'] ?? [], ['skill_id']);
                 $counts['role_profiles'] = $this->rows(RoleProfile::class, $data['role_profiles'] ?? [], ['role', 'grade']);
+                Recommendation::query()->delete();
             }
             if (isset($files['employees.json'])) {
                 $data = $this->json($files['employees.json']);
@@ -53,6 +55,7 @@ class DatasetImporter
                 } unset($row);
                 $counts['employees'] = $this->rows(Employee::class, $rows, ['employee_id']);
                 ActivityRecord::whereIn('employee_id', array_keys($managers))->update(['skills_applied' => false]);
+                Recommendation::whereIn('employee_id', array_keys($managers))->delete();
                 foreach ($managers as $id => $manager) {
                     Validator::make(['manager_id' => $manager], ['manager_id' => 'nullable|exists:employees,employee_id'])->validate();
                     Employee::whereKey($id)->update(['manager_id' => $manager]);
@@ -62,6 +65,7 @@ class DatasetImporter
                 $data = $this->json($files['events.json']);
                 Validator::make($data, ['events' => 'present|array'])->validate();
                 $counts['events'] = $this->rows(Event::class, $data['events'], ['event_id']);
+                Recommendation::query()->delete();
             }
             if (isset($files['activity_history.csv'])) {
                 $handle = fopen($files['activity_history.csv'], 'r');
@@ -84,7 +88,10 @@ class DatasetImporter
                         }
                         $rows[] = array_map(fn ($value) => $value === '' ? null : $value, array_combine($header, $values));
                     }
+                    $affectedEmployeeIds = ActivityRecord::whereIn('record_id', array_column($rows, 'record_id'))->pluck('employee_id')
+                        ->merge(array_column($rows, 'employee_id'))->unique();
                     $counts['activity_records'] = $this->rows(ActivityRecord::class, $rows, ['record_id']);
+                    Recommendation::whereIn('employee_id', $affectedEmployeeIds)->delete();
                 } finally {
                     fclose($handle);
                 }
