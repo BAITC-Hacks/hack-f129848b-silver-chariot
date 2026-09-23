@@ -18,14 +18,14 @@
 
 ## Участник B — AI-слой
 
-- [ ] `RecommendationEngine`: жёсткие фильтры кандидатов (mandatory, target_roles/grades, prerequisites, не пройдено)
-- [ ] `RecommendationEngine`: многофакторный скоринг — вклад в разрывы до след. грейда (с учётом max_level), critical_skills, career_goal, штрафы истории (no_show/declined/dropped), своевременность завершений, ближайшие сессии
-- [ ] `LlmService`: драйверы OpenAI-compatible / Anthropic-compatible (через .env)
-- [ ] `LlmService`: промпт — профиль, разрывы, история, топ-8 кандидатов с факторами
-- [ ] `LlmService`: strict JSON → валидация event_id против кандидатов → 1–3 рекомендации с обоснованием ≥3 факторов
-- [ ] `LlmService`: таймаут 8 с, fallback на шаблонное обоснование из factors движка
-- [ ] Тест на анти-примере из ТЗ: ниже всего Public Speaking, но 3 пропуска таких активностей и критичен System Design → движок рекомендует System Design
-- [ ] Доводка промпта: обоснования на русском, с конкретными цифрами («2 при требуемых 4 для Senior»)
+- [x] `RecommendationEngine`: жёсткие фильтры кандидатов (mandatory, target_roles/grades, prerequisites, не пройдено)
+- [x] `RecommendationEngine`: многофакторный скоринг — вклад в разрывы до след. грейда (с учётом max_level), critical_skills, career_goal, штрафы истории (no_show/declined/dropped), своевременность завершений, ближайшие сессии
+- [x] `LlmService`: драйверы OpenAI-compatible / Anthropic-compatible (через .env)
+- [x] `LlmService`: промпт — профиль, разрывы, история, топ-8 кандидатов с факторами
+- [x] `LlmService`: strict JSON → валидация event_id против кандидатов → 1–3 рекомендации с обоснованием ≥3 факторов
+- [x] `LlmService`: таймаут 8 с, fallback на шаблонное обоснование из factors движка
+- [x] Тест на анти-примере из ТЗ: ниже всего Public Speaking, но 3 пропуска таких активностей и критичен System Design → движок рекомендует System Design
+- [x] Доводка промпта: обоснования на русском, с конкретными цифрами («2 при требуемых 4 для Senior»)
 
 ## Участник C — Frontend / UI
 
@@ -46,8 +46,8 @@ Blade + Tailwind (Vite). До интеграции — на моках по ко
 ## Маркеры интеграции
 
 - [x] **M0** — `php artisan serve` поднимается, контракты зафиксированы
-- [ ] **M1** — импорт данных работает; движок на фикстуре выдаёт осмысленный топ-3
-- [ ] **M2** — POST /recommendations возвращает 1–3 события с обоснованием ≥3 факторов (llm и fallback)
+- [x] **M1** — импорт данных работает; движок на фикстуре выдаёт осмысленный топ-3
+- [x] **M2** — POST /recommendations возвращает 1–3 события с обоснованием ≥3 факторов (llm и fallback)
 - [ ] **M3** — полный сценарий сотрудника end-to-end на живых данных
 - [ ] **M4** — все 5 must-have из ТЗ проходят ручную проверку → README, прогон на проверочном профиле, freeze, репетиция демо
 

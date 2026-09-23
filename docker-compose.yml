@@ -4,7 +4,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      LLM_DRIVER: ${LLM_DRIVER:-anthropic}
+      APP_KEY: ${APP_KEY:-}
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/storage/database/database.sqlite
+      LLM_DRIVER: ${LLM_DRIVER:-openai}
       LLM_TIMEOUT: ${LLM_TIMEOUT:-8}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
@@ -12,6 +15,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_STRUCTURED_OUTPUTS: ${OPENAI_STRUCTURED_OUTPUTS:-true}
     volumes:
       - sqlite_data:/var/www/html/storage/database
 

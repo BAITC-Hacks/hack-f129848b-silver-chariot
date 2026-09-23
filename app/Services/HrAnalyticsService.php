@@ -11,16 +11,21 @@ use Illuminate\Support\Collection;
 
 class HrAnalyticsService
 {
+    public function __construct(private RecommendationEngine $engine, private SkillProjector $projector) {}
+
     public function skillGaps(): array
     {
         $profiles = RoleProfile::all()->keyBy(fn (RoleProfile $profile): string => $profile->role.'|'.$profile->grade);
         $grades = ['Junior' => 'Middle', 'Middle' => 'Senior', 'Senior' => 'Lead'];
         $totals = [];
-        foreach (Employee::all() as $employee) {
+        $events = Event::all()->keyBy('event_id')->toArray();
+        foreach (Employee::with('activityRecords')->get() as $employee) {
+            $history = $this->projector->history($employee->toArray(), $employee->activityRecords->toArray(), RecommendationEngine::SNAPSHOT_DATE);
+            $currentSkills = $this->projector->skills($employee->toArray(), $history, $events);
             $next = $grades[$employee->grade] ?? null;
             $profile = $next ? $profiles->get($employee->role.'|'.$next) : null;
             foreach ($profile?->required_skills ?? [] as $id => $required) {
-                $totals[$id] = ($totals[$id] ?? 0) + max(0, $required - ($employee->skills[$id] ?? 0));
+                $totals[$id] = ($totals[$id] ?? 0) + max(0, $required - ($currentSkills[$id] ?? 0));
             }
         }
         arsort($totals);
@@ -35,26 +40,16 @@ class HrAnalyticsService
         return $result;
     }
 
-    /** Temporary candidate filtering; replace with the track B engine at integration. */
     public function employeesWithoutNextStep(): Collection
     {
-        $events = Event::where('mandatory', false)->get();
+        $events = Event::all()->toArray();
+        $profiles = RoleProfile::all()->toArray();
 
-        return Employee::with('activityRecords')->get()->filter(fn (Employee $employee): bool => ! $events->contains(fn (Event $event): bool => $this->isCandidate($employee, $event)))->values();
-    }
+        return Employee::with('activityRecords')->get()->filter(function (Employee $employee) use ($events, $profiles): bool {
+            $analysis = $this->engine->analyze($employee->toArray(), $events, $profiles, $employee->activityRecords->toArray());
 
-    public function isCandidate(Employee $employee, Event $event): bool
-    {
-        if ($event->mandatory || ! in_array($employee->role, $event->target_roles, true) || ! in_array($employee->grade, $event->target_grades, true)) {
-            return false;
-        }
-        foreach ($event->prerequisites as $id => $required) {
-            if (($employee->skills[$id] ?? 0) < $required) {
-                return false;
-            }
-        }
-
-        return $event->event_id === 'EV_036' || ! $employee->activityRecords->contains(fn (ActivityRecord $record): bool => $record->event_id === $event->event_id && $record->status === 'completed');
+            return $analysis['candidates'] === [];
+        })->values();
     }
 
     public function participation(): array

@@ -29,12 +29,13 @@ return [
     ],
 
     'llm' => [
-        'driver' => env('LLM_DRIVER', 'anthropic'),
+        'driver' => env('LLM_DRIVER', 'openai'),
         'timeout' => (int) env('LLM_TIMEOUT', 8),
         'openai' => [
             'key' => env('OPENAI_API_KEY'),
             'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
             'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+            'structured_outputs' => (bool) env('OPENAI_STRUCTURED_OUTPUTS', true),
         ],
         'anthropic' => [
             'key' => env('ANTHROPIC_API_KEY'),
