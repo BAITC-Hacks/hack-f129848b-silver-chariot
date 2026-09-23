@@ -157,7 +157,3 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Run `vendor/bin/phpunit` to call the test runner directly. It accepts the same file path and `--filter=testName` arguments.
 
 </laravel-boost-guidelines>
-
-## Career Quest workflow
-
-Mark completed tasks in `PLAN.md` with `- [x]` in the same commit as their implementation. Follow `ARCHITECTURE.md` and the API contracts in `PLAN.md`.
