@@ -1,9 +1,117 @@
 @import 'tailwindcss';
 
+@source '../views/**/*.blade.php';
+@source '../js/**/*.js';
+@source '../../app/**/*.php';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Instrument Sans', 'Segoe UI', ui-sans-serif, system-ui, sans-serif;
+
+    --color-brand-50: #f2faF6;
+    --color-brand-100: #e1f3e9;
+    --color-brand-200: #bee6d0;
+    --color-brand-300: #8dd2ad;
+    --color-brand-400: #57b888;
+    --color-brand-500: #319d6c;
+    --color-brand-600: #247e57;
+    --color-brand-700: #1f6548;
+    --color-brand-800: #1b503b;
+    --color-brand-900: #173f31;
+    --color-brand-950: #082c22;
+
+    --color-acid-300: #e4ff86;
+    --color-acid-400: #d8ff62;
+    --color-acid-500: #c4ee42;
+
+    --shadow-card: 0 16px 40px rgb(15 23 42 / 0.05);
+    --shadow-float: 0 24px 60px rgb(8 44 34 / 0.14);
+}
+
+@layer base {
+    * {
+        border-color: color-mix(in oklab, var(--color-slate-200) 85%, transparent);
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        min-width: 1024px;
+        font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    }
+
+    button,
+    select,
+    input,
+    textarea,
+    a {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    button:not(:disabled),
+    select:not(:disabled),
+    [role='button']:not([aria-disabled='true']) {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    select:disabled,
+    input:disabled {
+        cursor: not-allowed;
+    }
+
+    ::selection {
+        background: rgb(216 255 98 / 0.75);
+        color: #082c22;
+    }
+
+    :focus-visible {
+        outline: 2px solid #319d6c;
+        outline-offset: 2px;
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .scrollbar-thin {
+        scrollbar-color: rgb(148 163 184 / 0.45) transparent;
+        scrollbar-width: thin;
+    }
+}
+
+@keyframes cq-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+[data-skeleton-card] {
+    position: relative;
+    overflow: hidden;
+}
+
+[data-skeleton-card]::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.72), transparent);
+    animation: cq-shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
