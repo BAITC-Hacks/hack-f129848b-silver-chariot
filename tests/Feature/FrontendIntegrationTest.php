@@ -64,9 +64,11 @@ class FrontendIntegrationTest extends TestCase
 
         $this->post('/session/role', ['role' => 'hr'])->assertRedirectToRoute('employees.index')->assertSessionHas('role', 'hr');
         $this->get('/employees')->assertOk()->assertSeeText('Other Employee Private Profile')->assertSee(route('hr.index'))->assertSee(route('admin.upload'));
-        $this->post('/session/role', ['role' => 'employee'])->assertRedirectToRoute('employees.index')->assertSessionHas('role', 'employee');
+        $this->get('/employees/E_TEST')->assertOk()->assertSeeText('К списку сотрудников');
+        $this->post('/session/role', ['role' => 'employee'])->assertRedirectToRoute('employees.show', 'E_TEST')->assertSessionHas('role', 'employee');
 
-        $this->get('/employees')->assertOk()->assertSeeText('Private Test Name')->assertDontSeeText('Other Employee Private Profile')->assertDontSee(route('hr.index'))->assertDontSee(route('admin.upload'));
+        $this->get('/employees')->assertRedirect('/employees/E_TEST');
+        $this->get('/employees/E_TEST')->assertOk()->assertSeeText('Private Test Name')->assertDontSeeText('К списку сотрудников')->assertDontSeeText('Other Employee Private Profile')->assertDontSee(route('hr.index'))->assertDontSee(route('admin.upload'));
         $this->get('/employees/E_PRIVATE')->assertNotFound();
         $this->postJson('/employees/E_PRIVATE/recommendations')->assertNotFound();
         $this->postJson('/employees/E_PRIVATE/complete', ['event_id' => 'EV_006'])->assertNotFound();

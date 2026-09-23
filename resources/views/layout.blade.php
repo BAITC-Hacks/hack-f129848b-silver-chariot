@@ -9,11 +9,20 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="min-h-screen bg-canvas text-slate-800 antialiased">
+    @php
+        $isHr = session('role', 'employee') === 'hr';
+        $homeUrl = $isHr
+            ? route('employees.index')
+            : route('employees.show', session('employee_id', 'E0001'));
+        $developmentIsActive = $isHr
+            ? request()->routeIs('employees.*')
+            : request()->routeIs('employees.show');
+    @endphp
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3">Перейти к содержимому</a>
 
     <header class="border-b border-slate-200 bg-white">
         <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-5 px-6 py-5 lg:px-8">
-            <a href="{{ route('employees.index') }}" class="flex items-center gap-3" aria-label="Career Quest — главная">
+            <a href="{{ $homeUrl }}" class="flex items-center gap-3" aria-label="Career Quest — главная">
                 <span class="flex size-10 items-center justify-center rounded-xl bg-emerald-800 text-white" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" class="size-6" stroke="currentColor" stroke-width="1.8"><path d="M5 17h4v-5h5V7h5M14 7h5v5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
@@ -21,8 +30,8 @@
             </a>
 
             <nav class="flex flex-wrap items-center gap-2 text-sm font-medium" aria-label="Основная навигация">
-                <a href="{{ route('employees.index') }}" @if(request()->routeIs('employees.*')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('employees.*')])>{{ session('role', 'employee') === 'hr' ? 'Сотрудники' : 'Моё развитие' }}</a>
-                @if(session('role', 'employee') === 'hr')
+                <a href="{{ $homeUrl }}" @if($developmentIsActive) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => $developmentIsActive])>{{ $isHr ? 'Сотрудники' : 'Моё развитие' }}</a>
+                @if($isHr)
                     <a href="{{ route('hr.index') }}" @if(request()->routeIs('hr.index')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('hr.index')])>HR-аналитика</a>
                     <a href="{{ route('hr.events.index') }}" @if(request()->routeIs('hr.events.*')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('hr.events.*')])>Активности</a>
                     <a href="{{ route('admin.upload') }}" @if(request()->routeIs('admin.*')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('admin.*')])>Импорт данных</a>
