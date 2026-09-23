@@ -217,6 +217,63 @@ class FrontendIntegrationTest extends TestCase
         $this->assertDatabaseMissing('activity_records', ['record_id' => 'R1', 'employee_id' => 'E_TEST']);
     }
 
+    #[TestWith(['Typo Engineer', 'Senior'])]
+    #[TestWith(['Data Analyst', 'Lead'])]
+    public function test_unknown_career_goal_returns_422_and_rolls_back_entire_upload(string $role, string $grade): void
+    {
+        $employee = $this->createProfile();
+        Http::preventStrayRequests();
+        $employee->recommendations()->create(['event_id' => 'EV_006', 'rank' => 1, 'score' => 9, 'factors' => ['skill_gap', 'critical_skill', 'history_clean'], 'rationale' => 'Preserved recommendation', 'source' => 'fallback']);
+        $file = UploadedFile::fake()->createWithContent('employees.json', json_encode(['employees' => [
+            [...$employee->toArray(), 'full_name' => 'Should be rolled back'],
+            [...$employee->toArray(), 'employee_id' => 'E_JURY', 'career_goal' => ['target_role' => $role, 'target_grade' => $grade]],
+        ]], JSON_THROW_ON_ERROR));
+        $history = UploadedFile::fake()->createWithContent('activity_history.csv', "record_id,employee_id,event_id,date,due_date,status,completion_pct,score,feedback_rating,assigned_by\nJURY_HISTORY,E_JURY,EV_036,2026-09-15,,completed,100,,,self\n");
+
+        $this->withSession(['role' => 'hr'])->postJson('/admin/upload', ['employees' => $file, 'activity_history' => $history])
+            ->assertUnprocessable()->assertJsonValidationErrors([
+                'career_goal.target_role' => 'Карьерная цель сотрудника E_JURY: указанная пара роли и грейда отсутствует в каталоге.',
+            ]);
+
+        $this->assertSame('Private Test Name', $employee->fresh()->full_name);
+        $this->assertDatabaseMissing('employees', ['employee_id' => 'E_JURY']);
+        $this->assertDatabaseMissing('activity_records', ['record_id' => 'JURY_HISTORY']);
+        $this->assertDatabaseHas('recommendations', ['employee_id' => 'E_TEST', 'rationale' => 'Preserved recommendation']);
+        $this->getJson('/hr')->assertOk();
+        $this->postJson('/employees/E_TEST/recommendations')->assertOk();
+        Http::assertNothingSent();
+    }
+
+    #[TestWith([null])]
+    #[TestWith([['target_role' => 'Backend Engineer', 'target_grade' => 'Senior']])]
+    #[TestWith([['target_role' => 'Data Analyst', 'target_grade' => 'Senior']])]
+    public function test_existing_career_goal_pair_or_null_is_imported(?array $goal): void
+    {
+        $employee = $this->createProfile();
+        $file = UploadedFile::fake()->createWithContent('employees.json', json_encode(['employees' => [
+            [...$employee->toArray(), 'employee_id' => 'E_GOAL', 'career_goal' => $goal],
+        ]], JSON_THROW_ON_ERROR));
+
+        $this->withSession(['role' => 'hr'])->postJson('/admin/upload', ['employees' => $file])
+            ->assertOk()->assertExactJson(['imported' => ['employees' => 1]]);
+
+        $this->assertSame($goal, Employee::findOrFail('E_GOAL')->career_goal);
+        $this->getJson('/hr')->assertOk();
+    }
+
+    public function test_empty_career_goal_is_rejected_without_creating_a_profile(): void
+    {
+        $employee = $this->createProfile();
+        $file = UploadedFile::fake()->createWithContent('employees.json', json_encode(['employees' => [
+            [...$employee->toArray(), 'employee_id' => 'E_EMPTY_GOAL', 'career_goal' => []],
+        ]], JSON_THROW_ON_ERROR));
+
+        $this->withSession(['role' => 'hr'])->postJson('/admin/upload', ['employees' => $file])
+            ->assertUnprocessable()->assertJsonValidationErrors('career_goal');
+
+        $this->assertDatabaseMissing('employees', ['employee_id' => 'E_EMPTY_GOAL']);
+    }
+
     private function createProfile(): Employee
     {
         $fixture = require base_path('tests/Fixtures/career_quest.php');
