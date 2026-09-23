@@ -9,3 +9,4 @@ storage/framework/views/*
 database/database.sqlite
 *.log
 .DS_Store
+bootstrap/cache/*.php

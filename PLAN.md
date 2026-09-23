@@ -13,7 +13,7 @@
 - [x] Контроллеры и роуты: профиль, recommendations, complete, HR, upload
 - [x] `/admin/upload` — merge проверочных `employees.json` + `activity_history.csv` от жюри
 - [x] Middleware ролей (сотрудник/HR, сессионный переключатель)
-- [ ] Docker: Dockerfile + docker-compose.yml (развёртывание одной командой)
+- [x] Docker: Dockerfile + docker-compose.yml (развёртывание одной командой)
 - [x] README: запуск, сценарий для жюри
 
 ## Участник B — AI-слой
