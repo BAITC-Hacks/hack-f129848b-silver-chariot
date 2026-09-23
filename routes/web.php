@@ -10,7 +10,7 @@ use App\Http\Middleware\EnsureEmployeeAccess;
 use App\Http\Middleware\EnsureHrRole;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => view('welcome'));
+Route::get('/', fn () => redirect()->route('employees.index'));
 Route::post('/session/role', [SessionRoleController::class, 'store'])->name('session.role');
 Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
 Route::middleware(EnsureEmployeeAccess::class)->group(function (): void {

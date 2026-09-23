@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\Event;
 use App\Models\Skill;
 use App\Services\ProgressService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -14,24 +15,47 @@ class EmployeeController extends Controller
 {
     public function index(Request $request): View|JsonResponse
     {
-        $request->validate(['search' => 'nullable|string|max:200']);
+        $request->validate([
+            'search' => 'nullable|string|max:200',
+            'role' => 'nullable|string|max:200',
+            'grade' => 'nullable|string|in:Junior,Middle,Senior,Lead',
+        ]);
         $query = Employee::query();
         if ($request->session()->get('role', 'employee') !== 'hr') {
             $query->whereKey($request->session()->get('employee_id', 'E0001'));
         }
+        $roles = (clone $query)->select('role')->distinct()->orderBy('role')->pluck('role');
+        $grades = ['Junior', 'Middle', 'Senior', 'Lead'];
+
         if ($search = $request->string('search')->toString()) {
-            $query->where(function ($query) use ($search): void {
+            $query->where(function (Builder $query) use ($search): void {
                 $query->where('full_name', 'like', '%'.$search.'%')->orWhere('role', 'like', '%'.$search.'%')->orWhere('grade', 'like', '%'.$search.'%');
             });
         }
+        if ($role = $request->string('role')->toString()) {
+            $query->where('role', $role);
+        }
+        if ($grade = $request->string('grade')->toString()) {
+            $query->where('grade', $grade);
+        }
         $employees = $query->orderBy('employee_id')->paginate(25)->withQueryString();
 
-        return $request->expectsJson() ? response()->json(['employees' => $employees]) : view('employees.index', compact('employees'));
+        return $request->expectsJson() ? response()->json(['employees' => $employees]) : view('employees.index', compact('employees', 'roles', 'grades'));
     }
 
     public function show(Request $request, Employee $employee, ProgressService $progress): View|JsonResponse
     {
-        $data = ['employee' => $employee, 'gaps' => $progress->gaps($employee), 'grade_readiness' => $progress->gradeReadiness($employee), 'history' => $employee->activityRecords()->with('event')->orderByDesc('date')->get(), 'skills' => Skill::all()->keyBy('skill_id'), 'events' => Event::orderBy('event_id')->get()];
+        $history = $employee->activityRecords()->with('event')->orderByDesc('date')->orderByDesc('record_id')->get();
+        $completedEventIds = $history->where('status', 'completed')->pluck('event_id')->reject(fn (string $id): bool => $id === 'EV_036');
+        $data = [
+            'employee' => $employee,
+            'gaps' => $progress->gaps($employee),
+            'grade_readiness' => $progress->gradeReadiness($employee),
+            'history' => $history,
+            'skills' => Skill::all()->keyBy('skill_id'),
+            'events' => Event::whereNotIn('event_id', $completedEventIds)->orderBy('event_id')->get(),
+            'recommendations' => $employee->recommendations()->with('event')->orderBy('rank')->get(),
+        ];
         $employee->setAttribute('skills', $progress->currentSkills($employee));
 
         return $request->expectsJson() ? response()->json($data) : view('employees.show', $data);
