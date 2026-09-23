@@ -38,7 +38,7 @@ class CareerQuestTest extends TestCase
     {
         $this->import();
         $employee = Employee::findOrFail('E0001');
-        $employee->update(['skills' => ['SK_PYTHON' => 3, 'SK_SQL' => 4]]);
+        $employee->update(['skills' => ['SK_PYTHON' => 3, 'SK_SQL' => 4], 'last_review_date' => ProgressService::SNAPSHOT_DATE]);
         RoleProfile::where('role', $employee->role)->where('grade', 'Middle')->update(['required_skills' => json_encode(['SK_PYTHON' => 4, 'SK_SQL' => 5, 'SK_SYSTEM_DESIGN' => 3])]);
         $event = Event::findOrFail('EV_036');
         $event->update(['develops_skills' => [['skill_id' => 'SK_PYTHON', 'gain' => 3, 'max_level' => 4], ['skill_id' => 'SK_SQL', 'gain' => 3, 'max_level' => 5], ['skill_id' => 'SK_SYSTEM_DESIGN', 'gain' => 2, 'max_level' => 4]]]);
@@ -61,8 +61,9 @@ class CareerQuestTest extends TestCase
         $this->assertDatabaseCount('activity_records', 2745);
     }
 
-    public function test_employee_access_and_recommendation_stub(): void
+    public function test_employee_access_and_recommendations(): void
     {
+        config(['services.llm.driver' => 'disabled']);
         $this->import();
         $this->get('/employees')->assertSee('Marat Yessenov');
         $this->get('/employees/E0001')->assertOk();
@@ -73,7 +74,7 @@ class CareerQuestTest extends TestCase
         $this->get('/hr')->assertForbidden();
         $this->get('/admin/upload')->assertForbidden();
         $this->postJson('/admin/upload')->assertForbidden();
-        $this->postJson('/employees/E0001/recommendations')->assertStatus(501)->assertExactJson(['recommendations' => []]);
+        $this->postJson('/employees/E0001/recommendations')->assertOk()->assertJsonPath('recommendations.0.source', 'fallback');
         $this->postJson('/employees/E0001/complete', [])->assertUnprocessable()->assertJsonValidationErrors('event_id');
         $this->postJson('/employees/E0001/complete', ['event_id' => 'missing'])->assertUnprocessable();
     }
@@ -127,7 +128,7 @@ class CareerQuestTest extends TestCase
     {
         $this->import();
         $employee = Employee::findOrFail('E0001');
-        $employee->update(['skills' => []]);
+        $employee->update(['skills' => [], 'last_review_date' => ProgressService::SNAPSHOT_DATE]);
         Employee::where('employee_id', '!=', 'E0001')->update(['grade' => 'Lead']);
         RoleProfile::where('role', $employee->role)->where('grade', 'Middle')->update(['required_skills' => json_encode(['SK_PYTHON' => 4])]);
         $service = app(HrAnalyticsService::class);
@@ -137,11 +138,11 @@ class CareerQuestTest extends TestCase
         Event::query()->update(['mandatory' => true]);
         $this->assertCount(200, $service->employeesWithoutNextStep());
         $event = Event::findOrFail('EV_036');
-        $event->update(['mandatory' => false, 'target_roles' => [$employee->role], 'target_grades' => ['Junior'], 'prerequisites' => []]);
+        $event->update(['mandatory' => false, 'target_roles' => [$employee->role], 'target_grades' => ['Junior'], 'prerequisites' => [], 'develops_skills' => [['skill_id' => 'SK_PYTHON', 'gain' => 1, 'max_level' => 4]]]);
         $this->assertCount(199, $service->employeesWithoutNextStep());
         $event->update(['prerequisites' => ['SK_PYTHON' => 1]]);
         $this->assertCount(200, $service->employeesWithoutNextStep());
         $lead = Employee::findOrFail('E0002');
-        $this->assertSame(['grade' => null, 'covered' => 0, 'total' => 0],app(ProgressService::class)->gradeReadiness($lead));
+        $this->assertSame(['grade' => null, 'covered' => 0, 'total' => 0], app(ProgressService::class)->gradeReadiness($lead));
     }
 }

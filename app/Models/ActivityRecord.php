@@ -19,7 +19,7 @@ class ActivityRecord extends Model
 
     protected function casts(): array
     {
-        return ['date' => 'date:Y-m-d', 'due_date' => 'date:Y-m-d', 'completion_pct' => 'integer', 'score' => 'integer', 'feedback_rating' => 'integer'];
+        return ['date' => 'date:Y-m-d', 'due_date' => 'date:Y-m-d', 'completion_pct' => 'integer', 'score' => 'integer', 'feedback_rating' => 'integer', 'skills_applied' => 'boolean'];
     }
 
     public function employee(): BelongsTo

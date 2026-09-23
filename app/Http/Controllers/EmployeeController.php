@@ -32,6 +32,7 @@ class EmployeeController extends Controller
     public function show(Request $request, Employee $employee, ProgressService $progress): View|JsonResponse
     {
         $data = ['employee' => $employee, 'gaps' => $progress->gaps($employee), 'grade_readiness' => $progress->gradeReadiness($employee), 'history' => $employee->activityRecords()->with('event')->orderByDesc('date')->get(), 'skills' => Skill::all()->keyBy('skill_id'), 'events' => Event::orderBy('event_id')->get()];
+        $employee->setAttribute('skills', $progress->currentSkills($employee));
 
         return $request->expectsJson() ? response()->json($data) : view('employees.show', $data);
     }

@@ -52,6 +52,7 @@ class DatasetImporter
                     $row['manager_id'] = null;
                 } unset($row);
                 $counts['employees'] = $this->rows(Employee::class, $rows, ['employee_id']);
+                ActivityRecord::whereIn('employee_id', array_keys($managers))->update(['skills_applied' => false]);
                 foreach ($managers as $id => $manager) {
                     Validator::make(['manager_id' => $manager], ['manager_id' => 'nullable|exists:employees,employee_id'])->validate();
                     Employee::whereKey($id)->update(['manager_id' => $manager]);

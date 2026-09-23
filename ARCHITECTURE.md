@@ -4,7 +4,7 @@ HackAlem AI · трек Halyk Bank · Кейс 1: AI-навигатор разв
 
 ## Стек
 
-- **Laravel 12 (PHP 8.4) + Blade + Tailwind CSS (Vite)**
+- **Laravel 13 (PHP 8.4+) + Blade + Tailwind CSS (Vite)** — фактические зависимости проекта
 - **SQLite** — один файл, ноль инфраструктуры, запуск одной командой
 - **LLM** — OpenAI-compatible API (`gpt-4o-mini`) или Anthropic-compatible эндпоинт; драйвер выбирается через `.env`. При недоступности LLM — fallback на детерминированное обоснование
 
@@ -34,7 +34,7 @@ Domain (app/Services)
 | `role_profiles` | id, role, grade, required_skills json, critical_skills json | required_skills → skills |
 | `employees` | employee_id (pk), full_name, department, role, grade, manager_id, hire_date, tenure_months, work_format, preferred_language, career_goal json, skills json, last_review_date | (role, grade) → role_profiles; manager_id → employees |
 | `events` | event_id (pk), title, description, type, format, duration_hours, mandatory, target_roles json, target_grades json, develops_skills json, prerequisites json, upcoming_sessions json | develops_skills → skills |
-| `activity_records` | record_id (pk), employee_id, event_id, date, due_date, status, completion_pct, score, feedback_rating, assigned_by | → employees, → events |
+| `activity_records` | record_id (pk), employee_id, event_id, date, due_date, status, completion_pct, score, feedback_rating, assigned_by, skills_applied (внутренний флаг) | → employees, → events |
 | `recommendations` | id, employee_id, event_id, rank, score, factors json, rationale, source (llm/fallback), created_at | → employees, → events |
 
 `recommendations` — единственная производная сущность: кэш ответа AI-слоя для воспроизводимости на защите.
@@ -47,32 +47,47 @@ Domain (app/Services)
 1. Кандидаты (жёсткие фильтры):
    mandatory=false · role ∈ target_roles · grade ∈ target_grades
    · prerequisites выполнены · нет completed в истории (кроме EV_036)
+   · нет in_progress · есть будущая сессия или self_paced
+   · есть положительный вклад в требования грейда или карьерной цели
 
 2. Скоринг каждого кандидата (RecommendationEngine):
    + вклад в разрывы до следующего грейда:
-     Σ min(gain, gap, max_level - current) по develops_skills
+     Σ max(0, min(gain, gap, max_level - current, 5 - current)) по develops_skills
      (gap = required_next_grade - current)
    + бонус за critical_skills следующего грейда
    + бонус за совпадение с career_goal (target_role/target_grade)
    − штраф за no_show/declined/dropped на этом событии или его типе
-   + бонус за историю своевременных завершений
+   + бонус за завершения похожих активностей и подтверждённые завершения в срок
    + бонус за ближайшую upcoming_session / self_paced
 
 3. LLM (LlmService):
    промпт: профиль, разрывы, история, топ-8 кандидатов с факторами
-   → strict JSON [{event_id, rationale}] (1–3 шт)
-   валидация event_id против кандидатов; обоснование ≥3 факторов
+   → strict JSON {recommendations: [{event_id, rationale, factors}]} (1–3 шт)
+   валидация event_id против кандидатов; обоснование ≥3 подтверждённых факторов
+   первый кандидат движка сохраняется; rationale состоит из выбранных evidence
    таймаут/ошибка/невалидный ответ → fallback: топ-3 движка
    + шаблонное обоснование из factors
 ```
 
 Лимиты по ТЗ: отклик интерфейса < 2 с, AI-рекомендация < 10 с (LLM-таймаут 8 с).
 
+Реализованный AI-слой принимает массивы и не зависит от наличия моделей/БД.
+`SkillProjector` рассчитывает навыки с учётом завершений после последней оценки.
+Записи с `skills_applied=true` уже включены в сохранённые навыки и повторно
+не начисляются. `ProgressService` сохраняет проекцию и новые приросты одной
+транзакцией; повторный импорт оценки сбрасывает флаги для этого сотрудника.
+Для уже актуализированных навыков вызывающая сторона передаёт
+`skillsAlreadyCurrent=true`, чтобы избежать двойного начисления.
+У Lead используются требования текущего грейда. Без подходящих кандидатов
+возвращается пустой список без обращения к LLM. Точные веса и контракт — в README.
+Своевременность нельзя вывести из даты зачисления: бонус требует явного
+`completed_at` вместе с `due_date`, которых нет вместе в стартовом CSV.
+
 ## Обновление прогресса
 
 `ProgressService.complete(employee, event)`:
 для каждого `{skill_id, gain, max_level}` из `develops_skills`:
-`level = min(level + gain, max_level, 5)` → запись `activity_records(status=completed, completion_pct=100)` → пересчёт разрывов → UI показывает дельту по навыкам и сдвиг по траектории.
+`level = level + max(0, min(gain, max_level - level, 5 - level))` → запись `activity_records(status=completed, completion_pct=100)` → пересчёт разрывов → UI показывает дельту по навыкам и сдвиг по траектории. Потолок события не должен снижать уже достигнутый уровень.
 
 ## HR-аналитика
 
@@ -105,10 +120,10 @@ Domain (app/Services)
 
 ```
 DB_CONNECTION=sqlite
-LLM_DRIVER=anthropic          # anthropic | openai
+LLM_DRIVER=openai             # openai | anthropic | disabled
 OPENAI_API_KEY=               # при выборе openai
 OPENAI_MODEL=gpt-4o-mini
-ANTHROPIC_API_KEY=...         # дефолт
+ANTHROPIC_API_KEY=            # при выборе anthropic
 ANTHROPIC_MODEL=claude-haiku-...
 LLM_TIMEOUT=8
 ```
