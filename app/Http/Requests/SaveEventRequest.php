@@ -10,7 +10,7 @@ class SaveEventRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->session()->get('role', 'employee') === 'hr';
+        return $this->user()?->can('access-hr') ?? false;
     }
 
     protected function prepareForValidation(): void

@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\Recommendation;
 use App\Models\RoleProfile;
 use App\Models\Skill;
+use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -30,7 +31,7 @@ class EventManagementTest extends TestCase
         $this->createCatalog();
         $this->createCachedRecommendations();
         $payload = [...$this->validPayload(), 'event_id' => 'EV_INJECTED', 'mandatory' => '1'];
-        $this->withSession(['role' => 'hr'])->get('/hr/events/create')->assertOk()->assertViewIs('events.form');
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->get('/hr/events/create')->assertOk()->assertViewIs('events.form');
 
         $response = $this->post('/hr/events', $payload)->assertSessionHasNoErrors();
 
@@ -59,7 +60,7 @@ class EventManagementTest extends TestCase
         $this->createCatalog();
         $this->createCachedRecommendations();
 
-        $this->withSession(['role' => 'hr'])->patch('/hr/events/EV_006', [
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->patch('/hr/events/EV_006', [
             ...$this->validPayload(), 'event_id' => 'EV_REPLACEMENT', 'title' => 'Self-paced Architecture',
             'format' => 'self_paced', 'type' => 'course',
             'develops_skills' => [['skill_id' => 'SK_SQL', 'gain' => '1', 'max_level' => '4']],
@@ -82,7 +83,7 @@ class EventManagementTest extends TestCase
         $this->createCatalog();
         $this->createCachedRecommendations();
 
-        $this->withSession(['role' => 'hr'])->delete('/hr/events/EV_006')
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->delete('/hr/events/EV_006')
             ->assertRedirectToRoute('hr.events.index')->assertSessionHasNoErrors();
 
         $this->assertDatabaseMissing('events', ['event_id' => 'EV_006']);
@@ -102,7 +103,7 @@ class EventManagementTest extends TestCase
     {
         $this->createCatalog();
 
-        $response = $this->withSession(['role' => 'hr'])->get('/hr/events?'.$query)->assertOk();
+        $response = $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->get('/hr/events?'.$query)->assertOk();
 
         $response->assertViewIs('events.index');
         $this->assertSame($expectedIds, $response->viewData('events')->pluck('event_id')->all());
@@ -119,7 +120,7 @@ class EventManagementTest extends TestCase
     {
         $this->createCatalog();
 
-        $this->withSession(['role' => 'employee'])->json($method, $uri, $this->validPayload())->assertForbidden();
+        $this->actingAs(User::factory()->create())->withSession(['role' => 'employee'])->json($method, $uri, $this->validPayload())->assertForbidden();
 
         $this->assertDatabaseCount('events', 3);
         $this->assertDatabaseHas('events', ['event_id' => 'EV_006', 'title' => 'Designing High-Load Systems']);
@@ -132,7 +133,7 @@ class EventManagementTest extends TestCase
     {
         $this->createCatalog();
 
-        $this->withSession(['role' => 'hr'])->json($method, $uri, $this->validPayload())->assertNotFound();
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->json($method, $uri, $this->validPayload())->assertNotFound();
 
         $this->assertDatabaseCount('events', 3);
     }
@@ -145,7 +146,7 @@ class EventManagementTest extends TestCase
     {
         $this->createCatalog();
 
-        $this->withSession(['role' => 'hr'])->postJson('/hr/events', [...$this->validPayload(), ...$overrides])
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->postJson('/hr/events', [...$this->validPayload(), ...$overrides])
             ->assertUnprocessable()->assertJsonValidationErrors($error);
 
         $this->assertDatabaseCount('events', 3);
@@ -190,7 +191,7 @@ class EventManagementTest extends TestCase
     {
         $this->createCatalog();
 
-        $this->withSession(['role' => 'hr'])->post('/hr/events', [
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->post('/hr/events', [
             ...$this->validPayload(), 'format' => 'self_paced',
             'develops_skills' => [['skill_id' => '', 'gain' => '', 'max_level' => '']],
             'prerequisite_skills' => [['skill_id' => '', 'min_level' => '']],
@@ -212,7 +213,7 @@ class EventManagementTest extends TestCase
         $employee = $this->createCachedRecommendations();
         $employee->activityRecords()->create(['record_id' => 'R_PROTECTED', 'event_id' => 'EV_006', 'date' => '2026-10-07', 'status' => $status, 'completion_pct' => 0, 'assigned_by' => 'self']);
 
-        $this->withSession(['role' => 'hr'])->from('/hr/events/EV_006/edit')->delete('/hr/events/EV_006')
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->from('/hr/events/EV_006/edit')->delete('/hr/events/EV_006')
             ->assertRedirect('/hr/events/EV_006/edit')->assertSessionHasErrors(['event' => 'Нельзя удалить активность с историей участия сотрудников.']);
 
         $this->assertDatabaseHas('events', ['event_id' => 'EV_006']);
@@ -228,7 +229,7 @@ class EventManagementTest extends TestCase
         $employee = $this->createCachedRecommendations();
         $employee->activityRecords()->create(['record_id' => 'R_PROTECTED', 'event_id' => 'EV_006', 'date' => '2026-10-07', 'status' => $status, 'completion_pct' => 0, 'assigned_by' => 'self']);
 
-        $this->withSession(['role' => 'hr'])->patchJson('/hr/events/EV_006', $this->validPayload())
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->patchJson('/hr/events/EV_006', $this->validPayload())
             ->assertUnprocessable()->assertJsonValidationErrors([
                 'develops_skills' => 'Нельзя менять прирост навыков у активности с историей участия: это изменит прогресс сотрудников. Создайте новую активность.',
             ]);
@@ -248,7 +249,7 @@ class EventManagementTest extends TestCase
         $payload = $this->validPayload();
         unset($payload['develops_skills']);
 
-        $this->withSession(['role' => 'hr'])->patch('/hr/events/EV_006', $payload)
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->patch('/hr/events/EV_006', $payload)
             ->assertRedirectToRoute('hr.events.edit', 'EV_006')->assertSessionHasNoErrors();
 
         $event = Event::findOrFail('EV_006');
@@ -265,7 +266,7 @@ class EventManagementTest extends TestCase
         $employee = $this->createCachedRecommendations();
         $employee->activityRecords()->create(['record_id' => 'R_PROTECTED', 'event_id' => 'EV_006', 'date' => '2026-10-07', 'status' => 'completed', 'completion_pct' => 100, 'assigned_by' => 'self']);
 
-        $this->withSession(['role' => 'hr'])->get('/hr/events/EV_006/edit')
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->get('/hr/events/EV_006/edit')
             ->assertSee('data-row-group="develops_skills" disabled', false)
             ->assertSeeText('Удаление недоступно: у активности есть история участия сотрудников.')
             ->assertDontSee('data-event-delete', false);
@@ -277,7 +278,7 @@ class EventManagementTest extends TestCase
         $payload = [...$this->validPayload(), 'title' => ''];
         unset($payload['develops_skills'], $payload['prerequisite_skills'], $payload['target_roles'], $payload['target_grades'], $payload['upcoming_sessions']);
 
-        $this->withSession(['role' => 'hr'])->from('/hr/events/EV_006/edit')->patch('/hr/events/EV_006', $payload)
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->from('/hr/events/EV_006/edit')->patch('/hr/events/EV_006', $payload)
             ->assertRedirect('/hr/events/EV_006/edit')->assertSessionHasErrors([
                 'title' => 'Заполните поле «Название».', 'target_roles', 'target_grades', 'upcoming_sessions',
             ]);
@@ -299,7 +300,7 @@ class EventManagementTest extends TestCase
         $this->createCatalog();
         $this->createCachedRecommendations();
 
-        $this->withSession(['role' => 'hr'])->patchJson('/hr/events/EV_006', [...$this->validPayload(), 'upcoming_sessions' => []])
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->patchJson('/hr/events/EV_006', [...$this->validPayload(), 'upcoming_sessions' => []])
             ->assertUnprocessable()->assertJsonValidationErrors('upcoming_sessions');
 
         $this->assertDatabaseHas('events', ['event_id' => 'EV_006', 'title' => 'Designing High-Load Systems']);
@@ -313,7 +314,7 @@ class EventManagementTest extends TestCase
         $description = '<img src=x onerror=alert("description")>';
         Event::findOrFail('EV_006')->update(['title' => $title, 'description' => $description]);
 
-        $this->withSession(['role' => 'hr'])->get('/hr/events')->assertSee($title)->assertDontSee($title, false);
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->get('/hr/events')->assertSee($title)->assertDontSee($title, false);
         $this->get('/hr/events/EV_006/edit')->assertSee($title)->assertSee($description)
             ->assertDontSee($title, false)->assertDontSee($description, false);
     }
@@ -341,7 +342,7 @@ class EventManagementTest extends TestCase
             return Http::response(['choices' => [['finish_reason' => 'stop', 'message' => ['content' => json_encode(['recommendations' => $rows])]]]]);
         }]);
 
-        $this->withSession(['role' => 'hr'])->postJson('/employees/E_TEST/recommendations')
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr'])->postJson('/employees/E_TEST/recommendations')
             ->assertUnprocessable()->assertJsonValidationErrors('events');
 
         $this->assertDatabaseCount('recommendations', 0);

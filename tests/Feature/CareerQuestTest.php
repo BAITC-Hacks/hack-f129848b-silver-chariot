@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Employee;
 use App\Models\Event;
 use App\Models\RoleProfile;
+use App\Models\User;
 use App\Services\DatasetImporter;
 use App\Services\HrAnalyticsService;
 use App\Services\ProgressService;
@@ -37,6 +38,7 @@ class CareerQuestTest extends TestCase
     public function test_complete_applies_caps_missing_skills_snapshot_and_exact_contract(): void
     {
         $this->import();
+        $this->actingAs(User::factory()->create(['employee_id' => 'E0001']));
         $employee = Employee::findOrFail('E0001');
         $employee->update(['skills' => ['SK_PYTHON' => 3, 'SK_SQL' => 4], 'last_review_date' => ProgressService::SNAPSHOT_DATE]);
         RoleProfile::where('role', $employee->role)->where('grade', 'Middle')->update(['required_skills' => json_encode(['SK_PYTHON' => 4, 'SK_SQL' => 5, 'SK_SYSTEM_DESIGN' => 3])]);
@@ -50,6 +52,7 @@ class CareerQuestTest extends TestCase
     public function test_completed_events_are_rejected_except_recurring_club(): void
     {
         $this->import();
+        $this->actingAs(User::factory()->create(['employee_id' => 'E0001']));
         $employee = Employee::findOrFail('E0001');
         $record = $employee->activityRecords()->where('status', 'completed')->where('event_id', '!=', 'EV_036')->firstOrFail();
         $this->postJson('/employees/E0001/complete', ['event_id' => $record->event_id])->assertUnprocessable()->assertJsonValidationErrors('event_id');
@@ -65,6 +68,7 @@ class CareerQuestTest extends TestCase
     {
         config(['services.llm.driver' => 'disabled']);
         $this->import();
+        $this->actingAs(User::factory()->create(['employee_id' => 'E0001']));
         $this->get('/employees')->assertRedirect('/employees/E0001');
         $this->get('/employees/E0001')->assertOk()->assertDontSeeText('К списку сотрудников');
         $this->getJson('/employees')->assertJsonPath('employees.total', 1);
@@ -82,6 +86,7 @@ class CareerQuestTest extends TestCase
     public function test_hr_session_search_and_views(): void
     {
         $this->import();
+        $this->actingAs(User::factory()->create(['role' => 'hr', 'employee_id' => 'E0001']));
         $this->postJson('/session/role', ['role' => 'hr'])->assertExactJson(['role' => 'hr'])->assertSessionHas('role', 'hr');
         $this->get('/employees')->assertOk()->assertSee('Marat Yessenov');
         $this->get('/employees/E0001')->assertOk()->assertSeeText('К списку сотрудников');
@@ -97,13 +102,14 @@ class CareerQuestTest extends TestCase
     public function test_employee_only_upload_merges_new_and_existing_records(): void
     {
         $this->import();
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr']);
         $data = json_decode(file_get_contents(base_path('docs/case_1/career_quest_dataset/employees.json')), true);
         $employee = $data['employees'][0];
         $employee['full_name'] = 'Updated name';
         $new = $employee;
         $new['employee_id'] = 'JURY001';
         $file = UploadedFile::fake()->createWithContent('employees.json', json_encode(['employees' => [$employee, $new]]));
-        $this->withSession(['role' => 'hr'])->postJson('/admin/upload', ['employees' => $file])->assertOk()->assertExactJson(['imported' => ['employees' => 2]]);
+        $this->postJson('/admin/upload', ['employees' => $file])->assertOk()->assertExactJson(['imported' => ['employees' => 2]]);
         $this->assertDatabaseCount('employees', 201);
         $this->assertDatabaseHas('employees', ['employee_id' => 'E0001', 'full_name' => 'Updated name']);
         $this->assertDatabaseHas('employees', ['employee_id' => 'JURY001', 'manager_id' => 'E0050']);
@@ -112,9 +118,10 @@ class CareerQuestTest extends TestCase
     public function test_history_only_upload_upserts_and_bad_combined_upload_rolls_back(): void
     {
         $this->import();
+        $this->actingAs(User::factory()->create(['role' => 'hr']))->withSession(['role' => 'hr']);
         $csv = "record_id,employee_id,event_id,date,due_date,status,completion_pct,score,feedback_rating,assigned_by\nR_JURY,E0001,EV_036,2026-09-30,,completed,100,,,self\n";
         for ($i = 0; $i < 2; $i++) {
-            $this->withSession(['role' => 'hr'])->postJson('/admin/upload', ['activity_history' => UploadedFile::fake()->createWithContent('activity_history.csv', $csv)])->assertOk();
+            $this->postJson('/admin/upload', ['activity_history' => UploadedFile::fake()->createWithContent('activity_history.csv', $csv)])->assertOk();
         }
         $this->assertDatabaseCount('activity_records', 2744);
         $data = json_decode(file_get_contents(base_path('docs/case_1/career_quest_dataset/employees.json')), true)['employees'][0];

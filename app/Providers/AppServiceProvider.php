@@ -2,7 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +25,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::define('switch-to-hr', fn (User $user): bool => $user->role === 'hr');
+        Gate::define('access-hr', fn (User $user): bool => $user->can('switch-to-hr')
+            && request()->session()->get('role', 'employee') === 'hr');
+
+        RateLimiter::for('login', function (Request $request): array {
+            $email = $request->input('email');
+            $normalizedEmail = is_string($email) ? Str::lower($email) : '';
+
+            return [
+                Limit::perMinute(5)->by('account:'.hash('sha256', $normalizedEmail.'|'.$request->ip())),
+                Limit::perMinute(30)->by('ip:'.$request->ip()),
+            ];
+        });
     }
 }
