@@ -4,6 +4,18 @@ Laravel 13 / PHP 8.4+, SQLite, Blade + Tailwind. Snapshot данных: **2026-1
 
 ## Запуск
 
+### Docker (одна команда)
+
+```sh
+ANTHROPIC_API_KEY=sk-... docker compose up --build
+# или с OpenAI:
+LLM_DRIVER=openai OPENAI_API_KEY=sk-... docker compose up --build
+```
+
+Приложение: http://localhost:8000 — миграции и импорт датасета выполняются автоматически при старте контейнера. Без LLM-ключа тоже работает: рекомендации выдаёт детерминированный движок (fallback).
+
+### Локально
+
 Требуются PHP с SQLite, Composer, Node.js и npm.
 
 ```sh
