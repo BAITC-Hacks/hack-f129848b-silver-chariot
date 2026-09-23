@@ -23,7 +23,8 @@
             <nav class="flex flex-wrap items-center gap-2 text-sm font-medium" aria-label="Основная навигация">
                 <a href="{{ route('employees.index') }}" @if(request()->routeIs('employees.*')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('employees.*')])>{{ session('role', 'employee') === 'hr' ? 'Сотрудники' : 'Моё развитие' }}</a>
                 @if(session('role', 'employee') === 'hr')
-                    <a href="{{ route('hr.index') }}" @if(request()->routeIs('hr.*')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('hr.*')])>HR-аналитика</a>
+                    <a href="{{ route('hr.index') }}" @if(request()->routeIs('hr.index')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('hr.index')])>HR-аналитика</a>
+                    <a href="{{ route('hr.events.index') }}" @if(request()->routeIs('hr.events.*')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('hr.events.*')])>Активности</a>
                     <a href="{{ route('admin.upload') }}" @if(request()->routeIs('admin.*')) aria-current="page" @endif @class(['nav-link', 'nav-link-active' => request()->routeIs('admin.*')])>Импорт данных</a>
                 @endif
             </nav>
