@@ -4,7 +4,7 @@ HackAlem AI · трек Halyk Bank · Кейс 1: AI-навигатор разв
 
 ## Стек
 
-- **Laravel 12 (PHP 8.4) + Blade + Tailwind CSS (Vite)**
+- **Laravel 13 (PHP 8.4) + Blade + Tailwind CSS (Vite)**
 - **SQLite** — один файл, ноль инфраструктуры, запуск одной командой
 - **LLM** — OpenAI-compatible API (`gpt-4o-mini`) или Anthropic-compatible эндпоинт; драйвер выбирается через `.env`. При недоступности LLM — fallback на детерминированное обоснование
 

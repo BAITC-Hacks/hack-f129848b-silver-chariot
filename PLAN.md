@@ -5,15 +5,15 @@
 ## Участник A — Backend / Данные
 
 - [x] Скаффолд Laravel в корень репо, SQLite, `setup.sh` (запуск одной командой)
-- [ ] Миграции 6 таблиц: `skills`, `role_profiles`, `employees`, `events`, `activity_records`, `recommendations`
-- [ ] Модели Eloquent
-- [ ] `DatasetImporter` + `php artisan data:import` (все 4 файла стартового кита)
-- [ ] `ProgressService`: complete → применение gain/max_level → запись истории → дельта разрывов
-- [ ] `HrAnalyticsService`: проседающие навыки, сотрудники без шага, участие по событиям
-- [ ] Контроллеры и роуты: профиль, recommendations, complete, HR, upload
-- [ ] `/admin/upload` — merge проверочных `employees.json` + `activity_history.csv` от жюри
-- [ ] Middleware ролей (сотрудник/HR, сессионный переключатель)
-- [ ] README: запуск, сценарий для жюри
+- [x] Миграции 6 таблиц: `skills`, `role_profiles`, `employees`, `events`, `activity_records`, `recommendations`
+- [x] Модели Eloquent
+- [x] `DatasetImporter` + `php artisan data:import` (все 4 файла стартового кита)
+- [x] `ProgressService`: complete → применение gain/max_level → запись истории → дельта разрывов
+- [x] `HrAnalyticsService`: проседающие навыки, сотрудники без шага, участие по событиям
+- [x] Контроллеры и роуты: профиль, recommendations, complete, HR, upload
+- [x] `/admin/upload` — merge проверочных `employees.json` + `activity_history.csv` от жюри
+- [x] Middleware ролей (сотрудник/HR, сессионный переключатель)
+- [x] README: запуск, сценарий для жюри
 
 ## Участник B — AI-слой
 

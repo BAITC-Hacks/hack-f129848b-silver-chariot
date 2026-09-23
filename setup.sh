@@ -10,7 +10,7 @@ php artisan key:generate --force --quiet
 
 [ -f database/database.sqlite ] || touch database/database.sqlite
 php artisan migrate --force
-php artisan data:import --path=docs/case_1/career_quest_dataset || true
+php artisan data:import --path=docs/case_1/career_quest_dataset
 
 npm run build
 
