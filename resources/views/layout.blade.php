@@ -14,6 +14,9 @@
 <body class="min-h-full bg-[#f3f6f4] text-slate-900 antialiased">
 @php
     $isHr = session('role', 'employee') === 'hr';
+    $homeUrl = $isHr
+        ? route('employees.index')
+        : route('employees.show', session('employee_id', 'E0001'));
 @endphp
 
 <div class="flex min-h-screen min-w-[1024px]">
@@ -21,7 +24,7 @@
         <div class="pointer-events-none absolute -right-24 -top-20 size-64 rounded-full bg-emerald-400/10 blur-3xl"></div>
         <div class="pointer-events-none absolute -bottom-32 -left-24 size-72 rounded-full bg-lime-300/5 blur-3xl"></div>
 
-        <a href="{{ route('employees.index') }}" class="relative flex items-center gap-3 border-b border-white/10 px-6 py-6" aria-label="Career Quest — главная">
+        <a href="{{ $homeUrl }}" class="relative flex items-center gap-3 border-b border-white/10 px-6 py-6" aria-label="Career Quest — главная">
             <span class="grid size-10 place-items-center rounded-xl bg-[#d8ff62] text-[#082c22] shadow-[0_8px_30px_rgba(216,255,98,0.16)]">
                 <svg viewBox="0 0 24 24" class="size-6" fill="none" aria-hidden="true">
                     <path d="M6.5 17.5 10 14l2.5 2.5L18 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -38,7 +41,7 @@
         <nav class="relative flex flex-1 flex-col gap-1.5 px-3 py-6" aria-label="Основная навигация">
             <p class="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-100/40">Рабочее пространство</p>
 
-            <a href="{{ route('employees.index') }}"
+            <a href="{{ $homeUrl }}"
                @class([
                    'group flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition',
                    'bg-white text-[#082c22] shadow-sm' => request()->routeIs('employees.*'),

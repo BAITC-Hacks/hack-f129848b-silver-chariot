@@ -135,15 +135,17 @@
     <div class="text-slate-950">
         <div class="mx-auto flex max-w-[1440px] flex-col gap-6">
             <div class="flex items-center justify-between gap-6">
-                <a
-                    href="{{ route('employees.index') }}"
-                    class="group inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-emerald-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600"
-                >
-                    <svg class="size-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                        <path d="M15.833 10H4.167m0 0 4.375 4.375M4.167 10l4.375-4.375" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    Все сотрудники
-                </a>
+                @if(session('role', 'employee') === 'hr')
+                    <a
+                        href="{{ route('employees.index') }}"
+                        class="group inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-emerald-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600"
+                    >
+                        <svg class="size-4 transition-transform group-hover:-translate-x-0.5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M15.833 10H4.167m0 0 4.375 4.375M4.167 10l4.375-4.375" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Все сотрудники
+                    </a>
+                @endif
                 <p class="text-xs font-medium tracking-wide text-slate-400">Профиль обновлён {{ $lastReviewDate }}</p>
             </div>
 

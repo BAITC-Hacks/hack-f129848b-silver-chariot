@@ -7,14 +7,20 @@ use App\Models\Event;
 use App\Models\Skill;
 use App\Services\ProgressService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class EmployeeController extends Controller
 {
-    public function index(Request $request): View|JsonResponse
+    public function index(Request $request): View|JsonResponse|RedirectResponse
     {
         $request->validate(['search' => 'nullable|string|max:200']);
+
+        if (! $request->expectsJson() && $request->session()->get('role', 'employee') !== 'hr') {
+            return redirect()->route('employees.show', $request->session()->get('employee_id', 'E0001'));
+        }
+
         $query = Employee::query();
         if ($request->session()->get('role', 'employee') !== 'hr') {
             $query->whereKey($request->session()->get('employee_id', 'E0001'));

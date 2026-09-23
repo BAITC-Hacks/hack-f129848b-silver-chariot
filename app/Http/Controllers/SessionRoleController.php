@@ -13,6 +13,12 @@ class SessionRoleController extends Controller
         $data = $request->validate(['role' => 'required|in:employee,hr']);
         $request->session()->put('role', $data['role']);
 
-        return $request->expectsJson() ? response()->json(['role' => $data['role']]) : redirect()->route('employees.index');
+        if ($request->expectsJson()) {
+            return response()->json(['role' => $data['role']]);
+        }
+
+        return $data['role'] === 'hr'
+            ? redirect()->route('employees.index')
+            : redirect()->route('employees.show', $request->session()->get('employee_id', 'E0001'));
     }
 }
