@@ -1,3 +1,5 @@
+import './events';
+
 const profileSelector = '[data-employee-profile]';
 let requestInProgress = false;
 

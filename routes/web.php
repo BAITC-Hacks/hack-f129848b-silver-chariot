@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CompletionController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\HrController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\SessionRoleController;
@@ -20,6 +21,7 @@ Route::middleware(EnsureEmployeeAccess::class)->group(function (): void {
 });
 Route::middleware(EnsureHrRole::class)->group(function (): void {
     Route::get('/hr', [HrController::class, 'index'])->name('hr.index');
+    Route::resource('/hr/events', EventController::class)->except('show')->names('hr.events');
     Route::get('/admin/upload', [UploadController::class, 'create'])->name('admin.upload');
     Route::post('/admin/upload', [UploadController::class, 'store'])->name('admin.upload.store');
 });

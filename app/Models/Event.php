@@ -7,6 +7,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Event extends Model
 {
+    public const FORMATS = ['online' => 'Онлайн', 'offline' => 'Очно', 'self_paced' => 'В своём темпе'];
+
+    public const TYPES = [
+        'compliance' => 'Комплаенс', 'onboarding' => 'Адаптация', 'course' => 'Курс',
+        'workshop' => 'Воркшоп', 'mentoring' => 'Менторство',
+        'certification' => 'Сертификация', 'meetup' => 'Митап',
+    ];
+
     public $timestamps = false;
 
     protected $primaryKey = 'event_id';

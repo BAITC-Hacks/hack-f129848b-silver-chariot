@@ -10,15 +10,20 @@ use App\Services\LlmService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class RecommendationController extends Controller
 {
     public function store(Employee $employee, LlmService $llm): JsonResponse
     {
-        $result = $llm->recommend($employee->toArray(), Event::all()->toArray(), RoleProfile::all()->toArray(), $employee->activityRecords()->get()->toArray(), Skill::all()->toArray());
+        $events = Event::orderBy('event_id')->get()->toArray();
+        $result = $llm->recommend($employee->toArray(), $events, RoleProfile::all()->toArray(), $employee->activityRecords()->get()->toArray(), Skill::all()->toArray());
 
-        DB::transaction(function () use ($employee, $result): void {
+        DB::transaction(function () use ($employee, $result, $events): void {
             Employee::whereKey($employee->getKey())->lockForUpdate()->firstOrFail();
+            if (Event::orderBy('event_id')->lockForUpdate()->get()->toArray() !== $events) {
+                throw ValidationException::withMessages(['events' => 'Каталог активностей изменился во время подбора. Получите рекомендации ещё раз.']);
+            }
             $employee->recommendations()->delete();
             foreach ($result['recommendations'] as $recommendation) {
                 $employee->recommendations()->create([
