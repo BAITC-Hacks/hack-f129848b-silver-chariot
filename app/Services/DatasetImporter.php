@@ -137,6 +137,7 @@ class DatasetImporter
                 $rules['tenure_months'] = 'required|integer|min:0';
                 $rules['work_format'] = 'required|in:office,hybrid,remote';
                 $rules['preferred_language'] = 'required|in:kk,ru,en';
+                $rules['career_goal'] .= '|min:1';
                 $rules['career_goal.target_role'] = 'required_with:career_goal|string';
                 $rules['career_goal.target_grade'] = 'required_with:career_goal|in:Junior,Middle,Senior,Lead';
                 $rules['skills.*'] = 'integer|between:0,5';
@@ -157,6 +158,14 @@ class DatasetImporter
                 }
             }
             $valid = Validator::make($row, $rules)->validate();
+            if ($model === Employee::class && $valid['career_goal'] !== null) {
+                $goal = $valid['career_goal'];
+                if (! RoleProfile::where('role', $goal['target_role'])->where('grade', $goal['target_grade'])->exists()) {
+                    throw ValidationException::withMessages([
+                        'career_goal.target_role' => "Карьерная цель сотрудника {$valid['employee_id']}: указанная пара роли и грейда отсутствует в каталоге.",
+                    ]);
+                }
+            }
             $model::updateOrCreate(array_intersect_key($valid, array_flip($keys)), $valid);
         }
 
