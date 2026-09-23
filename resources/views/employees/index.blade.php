@@ -1,25 +1,25 @@
 @extends('layout')
 
-@section('title', session('role', 'employee') === 'hr' ? 'Сотрудники' : 'Моё развитие')
+@section('title', auth()->user()->can('access-hr') ? 'Сотрудники' : 'Моё развитие')
 
 @section('content')
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div class="flex flex-col gap-3">
-            <p class="eyebrow">{{ session('role', 'employee') === 'hr' ? 'Команда и развитие' : 'Ваш следующий шаг' }}</p>
-            <h1 class="page-title">{{ session('role', 'employee') === 'hr' ? 'Сотрудники' : 'Моё развитие' }}</h1>
+            <p class="eyebrow">{{ auth()->user()->can('access-hr') ? 'Команда и развитие' : 'Ваш следующий шаг' }}</p>
+            <h1 class="page-title">{{ auth()->user()->can('access-hr') ? 'Сотрудники' : 'Моё развитие' }}</h1>
             <p class="muted">Откройте профиль, чтобы увидеть навыки, карьерную траекторию и рекомендации.</p>
         </div>
-        @if(session('role', 'employee') === 'hr')
+        @can('access-hr')
             <a class="button-secondary" href="{{ route('hr.index') }}">К аналитике команды <span aria-hidden="true">↗</span></a>
-        @endif
+        @endcan
     </div>
 
-    @if(session('role', 'employee') !== 'hr')
+    @cannot('access-hr')
         <div class="flex items-start gap-3 rounded-xl border border-emerald-100 bg-emerald-50 px-5 py-4 text-sm text-emerald-900">
             <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="8" width="12" height="9" rx="2"/><path d="M7 8V5a3 3 0 0 1 6 0v3"/></svg>
             <p>В режиме сотрудника доступен только ваш профиль. Навыки и история других сотрудников скрыты.</p>
         </div>
-    @endif
+    @endcannot
 
     <section class="panel overflow-hidden" aria-label="Список сотрудников">
         <form method="get" action="{{ route('employees.index') }}" class="flex flex-wrap items-end gap-4 border-b border-slate-200 p-6">
@@ -52,7 +52,7 @@
         </form>
 
         <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h2 class="text-sm font-semibold text-slate-700">{{ session('role', 'employee') === 'hr' ? 'Профили сотрудников' : 'Мой профиль' }}</h2>
+            <h2 class="text-sm font-semibold text-slate-700">{{ auth()->user()->can('access-hr') ? 'Профили сотрудников' : 'Мой профиль' }}</h2>
             <span class="text-xs text-slate-500">Найдено: {{ $employees->total() }}</span>
         </div>
 

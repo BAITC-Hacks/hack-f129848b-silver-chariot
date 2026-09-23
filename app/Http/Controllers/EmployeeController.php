@@ -21,8 +21,8 @@ class EmployeeController extends Controller
             'grade' => 'nullable|string|in:Junior,Middle,Senior,Lead',
         ]);
         $query = Employee::query();
-        if ($request->session()->get('role', 'employee') !== 'hr') {
-            $query->whereKey($request->session()->get('employee_id', 'E0001'));
+        if (! $request->user()->can('access-hr')) {
+            $query->whereKey($request->user()->employee_id);
         }
         $roles = (clone $query)->select('role')->distinct()->orderBy('role')->pluck('role');
         $grades = ['Junior', 'Middle', 'Senior', 'Lead'];

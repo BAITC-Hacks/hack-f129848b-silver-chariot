@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Employee;
 use App\Models\Event;
 use App\Models\RoleProfile;
+use App\Models\User;
 use App\Services\DatasetImporter;
 use App\Services\HrAnalyticsService;
 use App\Services\ProgressService;
@@ -32,7 +33,7 @@ class RecommendationIntegrationTest extends TestCase
         foreach ($fixture['events'] as $event) {
             Event::create([...$event, 'description' => 'Synthetic test event.']);
         }
-        $this->withSession(['employee_id' => 'E_TEST']);
+        $this->actingAs(User::factory()->create(['employee_id' => 'E_TEST']));
     }
 
     public function test_endpoint_persists_valid_llm_results_and_replaces_previous_recommendations(): void
