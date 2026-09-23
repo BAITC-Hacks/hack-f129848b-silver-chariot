@@ -39,23 +39,10 @@
                     @endcan
                 </nav>
 
-                <div class="flex flex-wrap items-center gap-3">
-                    @can('switch-to-hr')
-                        <form method="post" action="{{ route('session.role') }}" class="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5">
-                            @csrf
-                            <label for="session-role" class="sr-only">Режим интерфейса</label>
-                            <select id="session-role" name="role" class="rounded-lg border-0 bg-transparent py-2 pl-2 pr-6 text-sm font-medium focus:outline-2 focus:outline-emerald-700">
-                                <option value="employee" @selected(session('role', 'employee') === 'employee')>Сотрудник</option>
-                                <option value="hr" @selected(session('role') === 'hr')>HR</option>
-                            </select>
-                            <button type="submit" class="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-emerald-50 hover:text-emerald-800">Сменить режим</button>
-                        </form>
-                    @endcan
-                    <form method="post" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="nav-link text-sm font-medium">Выйти</button>
-                    </form>
-                </div>
+                <form method="post" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="nav-link text-sm font-medium">Выйти</button>
+                </form>
             @endauth
         </div>
     </header>
