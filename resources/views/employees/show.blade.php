@@ -24,7 +24,9 @@
     @endphp
 
     <div data-employee-profile data-profile-url="{{ route('employees.show', $employee) }}" data-factor-labels="{{ json_encode($factorLabels, JSON_UNESCAPED_UNICODE) }}" data-type-labels="{{ json_encode($typeLabels, JSON_UNESCAPED_UNICODE) }}" class="space-y-8">
-        <a href="{{ route('employees.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-emerald-800"><span aria-hidden="true">←</span> К списку сотрудников</a>
+        @can('access-hr')
+            <a href="{{ route('employees.index') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-emerald-800"><span aria-hidden="true">←</span> К списку сотрудников</a>
+        @endcan
 
         <header class="flex flex-wrap items-start justify-between gap-5">
             <div class="space-y-3">

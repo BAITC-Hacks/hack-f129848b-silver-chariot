@@ -69,8 +69,8 @@ class CareerQuestTest extends TestCase
         config(['services.llm.driver' => 'disabled']);
         $this->import();
         $this->actingAs(User::factory()->create(['employee_id' => 'E0001']));
-        $this->get('/employees')->assertSee('Marat Yessenov');
-        $this->get('/employees/E0001')->assertOk();
+        $this->get('/employees')->assertRedirect('/employees/E0001');
+        $this->get('/employees/E0001')->assertOk()->assertDontSeeText('К списку сотрудников');
         $this->getJson('/employees')->assertJsonPath('employees.total', 1);
         $this->get('/employees/E0002')->assertNotFound();
         $this->postJson('/employees/E0002/complete', ['event_id' => 'EV_036'])->assertNotFound();
@@ -88,6 +88,8 @@ class CareerQuestTest extends TestCase
         $this->import();
         $this->actingAs(User::factory()->create(['role' => 'hr', 'employee_id' => 'E0001']));
         $this->postJson('/session/role', ['role' => 'hr'])->assertExactJson(['role' => 'hr'])->assertSessionHas('role', 'hr');
+        $this->get('/employees')->assertOk()->assertSee('Marat Yessenov');
+        $this->get('/employees/E0001')->assertOk()->assertSeeText('К списку сотрудников');
         $this->get('/hr')->assertOk();
         $this->get('/admin/upload')->assertOk();
         $this->getJson('/employees?search=Marat%20Yessenov')->assertJsonPath('employees.total', 1);
